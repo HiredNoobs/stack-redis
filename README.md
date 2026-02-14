@@ -1,0 +1,2 @@
+# stack-redis
+Redis deployment.
