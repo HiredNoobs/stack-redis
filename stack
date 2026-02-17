@@ -46,7 +46,7 @@ function stack_env {
   echo "REDIS NODES   = ($REDIS_REPLICAS)"
   list "$REDIS_NODES"
   echo
-  echo "TLS PORT      = $REDIS_PORT"
+  echo "TLS PORT      = $REDIS_TLS_PORT"
   echo
 }
 
