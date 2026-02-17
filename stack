@@ -5,7 +5,9 @@
 # -----------------------------------------------------
 
 function build_secrets {
-  make-ca redis -o "$SECRETS"
+  if [[ ! -f "$SECRETS/ca.crt" || ! -f "$SECRETS/ca.key" ]]; then
+    make-ca redis -o "$SECRETS"
+  fi
   make-cert redis $REDIS_NODES -o "$SECRETS" --ca-crt "$SECRETS/ca.crt" --ca-key "$SECRETS/ca.key"
   make-truststore redis "$SECRETS/ca.crt" -o "$SECRETS"
 
