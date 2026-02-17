@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+# -----------------------------------------------------
+# Helper functions
+# -----------------------------------------------------
+
+function build_secrets {
+  make-ca redis -o "$SECRETS"
+  make-cert redis $REDIS_NODES -o "$SECRETS" --ca-crt "$SECRETS/ca.crt" --ca-key "$SECRETS/ca.key"
+  make-truststore redis "$SECRETS/ca.crt" -o "$SECRETS"
+
+  stack_tools make-user admin $REDIS_NODES "atlas.$DOMAIN"
+}
+
+# -----------------------------------------------------
+# Stack functions
+# -----------------------------------------------------
+
+function stack_check_env {
+  if [ ! -d "$CONFIGS" ] || [ ! -d "$SECRETS" ]; then
+    echo "Configs or secrets directory are missing from '$ENVIRONMENT_BASE'."
+    exit 1
+  fi
+}
+
+function stack_discover {
+  export REDIS_REPLICAS=$(count "$REDIS_NODES")
+}
+
+function stack_tools {
+  local tool="$STACK_PATH/tools/$1"
+  shift
+
+  if [[ ! -x "$tool" ]]; then
+    log_error "$tool doesn't exist or isn't executable."
+    exit 1
+  fi
+
+  log_info "Running $tool with args: $@"
+  "$tool" "$@"
+}
+
+function stack_env {
+  echo
+  echo "DOCKER IMAGE  = $REDIS_IMAGE"
+  echo "REDIS NODES   = ($REDIS_REPLICAS)"
+  list "$REDIS_NODES"
+  echo
+  echo "TLS PORT      = $REDIS_PORT"
+  echo
+}
+
+function stack_deploy {
+  build_secrets
+  docker stack deploy --detach=true -c redis.yml "$STACK"
+}

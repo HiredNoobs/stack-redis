@@ -1,0 +1,49 @@
+services:
+  redis:
+    hostname: redis{{.Task.Slot}}
+    image: $REDIS_IMAGE
+    ports:
+      - mode: host
+        published: $REDIS_TLS_PORT
+        target: $REDIS_TLS_PORT
+        protocol: tcp
+    configs:
+      - source: redis_conf
+        target: /usr/local/etc/redis/redis.conf
+    secrets:
+      - source: ca_cert
+        target: /etc/redis/secrets/ca.crt
+      - source: redis_crt
+        target: /etc/redis/secrets/redis.crt
+      - source: redis_key
+        target: /etc/redis/secrets/redis.key
+    volumes:
+      - redis_data:/data
+    command:
+      - /bin/sh
+      - -c
+      - |
+        touch /data/users.acl
+        redis-server /usr/local/etc/redis/redis.conf
+    deploy:
+      mode: replicated
+      replicas: $REDIS_REPLICAS
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - node.labels.${STACK}_redis == 1
+
+configs:
+  redis_conf:
+    file: $CONFIGS/redis.conf
+
+secrets:
+  ca_cert:
+    file: $SECRETS/ca.crt
+  redis_crt:
+    file: $SECRETS/redis.crt
+  redis_key:
+    file: $SECRETS/redis.key
+
+volumes:
+  redis_data:
