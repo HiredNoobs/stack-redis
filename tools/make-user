@@ -11,4 +11,4 @@ echo "REDIS_ACL_PASSWORD=$ACL_PASSWORD" > "$SECRETS/$USER-secrets.env"
 make-keystore "$USER" $HOSTS -o "$SECRETS"
 
 # TODO: Define ACLs in $CONFIGS per user
-"$STACK_PATH/tools/client" "ACL SETUSER $USER >$ACL_PASSWORD +@ALL"
+"$STACK_PATH/tools/client" "ACL SETUSER $USER >$ACL_PASSWORD on +@ALL"
