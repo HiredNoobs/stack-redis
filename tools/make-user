@@ -5,4 +5,10 @@
 USER="$1"
 HOSTS=$@
 
-make-keystore "$USER" $HOSTS -o "$SECRETS" 
+ACL_PASSWORD=$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c 32)
+echo "REDIS_ACL_PASSWORD=$ACL_PASSWORD" > "$SECRETS/$USER-secrets.env"
+
+make-keystore "$USER" $HOSTS -o "$SECRETS"
+
+# TODO: Define ACLs in $CONFIGS per user
+"$STACK_PATH/tools/client" "ACL SETUSER $USER >$ACL_PASSWORD +@ALL"
