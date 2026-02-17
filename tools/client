@@ -13,19 +13,19 @@ REDIS_ACL_PASSWORD=$(echo -e "$REDIS_ACL_PASSWORD" | tr -d '\r')
 
 if [ -z "$1" ]; then
   echo
-  log_info "Connecting to $MASTER_NODE:$REDIS_TLS_PORT"
+  log_info "Connecting to $REDIS_MASTER_NODE:$REDIS_TLS_PORT"
   log_error "This is the master node for $ENVIRONMENT."  # Using log_error for the red color...
   log_info "Exit with ctrl+c"
   echo
   
   docker -H unix:///var/run/docker.sock run -it --rm -v "$SECRETS:/etc/redis/secrets" \
     "$REDIS_IMAGE" redis-cli --no-auth-warning --user admin --pass "$REDIS_ACL_PASSWORD" \
-    --tls -h "$MASTER_NODE" -p "$REDIS_TLS_PORT" --cacert /etc/redis/secrets/ca.crt \
+    --tls -h "$REDIS_MASTER_NODE" -p "$REDIS_TLS_PORT" --cacert /etc/redis/secrets/ca.crt \
     --cert /etc/redis/secrets/redis.crt --key /etc/redis/secrets/redis.key
 else
   CMD=$(echo -e $@ | tr -d '\r')
   docker -H unix:///var/run/docker.sock run -it --rm -v "$SECRETS:/etc/redis/secrets" \
     "$REDIS_IMAGE" redis-cli --no-auth-warning --user admin --pass "$REDIS_ACL_PASSWORD" \
-    --tls -h "$MASTER_NODE" -p "$REDIS_TLS_PORT" --cacert /etc/redis/secrets/ca.crt \
+    --tls -h "$REDIS_MASTER_NODE" -p "$REDIS_TLS_PORT" --cacert /etc/redis/secrets/ca.crt \
     --cert /etc/redis/secrets/redis.crt --key /etc/redis/secrets/redis.key $CMD
 fi

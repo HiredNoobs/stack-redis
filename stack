@@ -24,6 +24,7 @@ function stack_check_env {
 }
 
 function stack_discover {
+  export REDIS_MASTER_NODE=$(first "$REDIS_NODES")
   export REDIS_REPLICAS=$(count "$REDIS_NODES")
 }
 
