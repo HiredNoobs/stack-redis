@@ -5,8 +5,12 @@
 USER="$1"
 HOSTS=$@
 
-ACL_PASSWORD=$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c 32)
-echo "export REDIS_ACL_PASSWORD=$ACL_PASSWORD" > "$SECRETS/$USER-secrets.env"
+if [ ! -f "$SECRETS/$USER-secrets.env" ]; then
+    ACL_PASSWORD=$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c 32)
+    echo "export REDIS_ACL_PASSWORD=$ACL_PASSWORD" > "$SECRETS/$USER-secrets.env"
+else
+    source "$SECRETS/$USER-secrets.env"
+fi
 
 make-keystore "$USER" $HOSTS -o "$SECRETS"
 
