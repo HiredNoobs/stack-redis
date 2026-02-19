@@ -61,5 +61,6 @@ function stack_deploy {
   log_info "Creating admin user..."
   stack_tools make-user admin $REDIS_NODES "atlas.$DOMAIN"
   log_info "Disabling default user..."
-  stack_tools make-user default off
+  stack_tools client ACL SETUSER default off
+  stack_tools client "ACL SAVE"
 }
