@@ -12,6 +12,28 @@ function build_secrets {
   make-truststore redis "$SECRETS/ca.crt" -o "$SECRETS"
 }
 
+function check_python_env {
+  local in_venv missing packages pkg
+
+  in_venv=$(python3 -c 'import sys; print(int(hasattr(sys,"real_prefix") or sys.prefix!=getattr(sys,"base_prefix",sys.prefix)))')
+
+  if [[ "$in_venv" -ne 1 ]]; then
+    log_error "Python virtualenv not enabled."
+    exit 1
+  fi
+
+  missing=()
+  packages=(click redis python-dotenv)
+  for pkg in "${packages[@]}"; do
+    python3 -c "import $pkg" 2>/dev/null || missing+=("$pkg")
+  done
+
+  if (( ${#missing[@]} > 0 )); then
+    log_error "Missing modules: ${missing[*]}"
+    exit 1
+  fi
+}
+
 # -----------------------------------------------------
 # Stack functions
 # -----------------------------------------------------
@@ -29,12 +51,21 @@ function stack_discover {
 }
 
 function stack_tools {
-  local tool="$STACK_PATH/tools/$1"
+  local tool is_python
+  
+  tool="$STACK_PATH/tools/$1"
   shift
 
   if [[ ! -x "$tool" ]]; then
     log_error "$tool doesn't exist or isn't executable."
     exit 1
+  fi
+
+  head -n1 "$tool" | grep -q 'python'
+  is_python=$?
+
+  if [[ $is_python -eq 0 ]]; then
+    check_python_env
   fi
 
   log_info "Running $tool with args: $@"

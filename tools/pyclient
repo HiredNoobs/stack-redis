@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+
+import json
+import os
+
+import click
+import redis
+
+from dotenv import load_dotenv
+
+
+@click.group()
+@click.pass_context
+def cli(ctx: click.Context) -> None:
+    """Command-line tool for managing Redis data."""
+    secrets = os.getenv("SECRETS")
+    master_node = os.getenv("REDIS_MASTER_NODE")
+    tls_port = os.getenv("REDIS_TLS_PORT")
+    acl_pass = os.getenv("REDIS_ACL_PASSWORD")
+
+    redis_client = redis.Redis(
+        host=master_node,
+        port=tls_port,
+        username="admin",
+        password=acl_pass,
+        ssl=True,
+        ssl_certfile=os.path.join(secrets, "admin.crt"),
+        ssl_keyfile=os.path.join(secrets, "admin.key"),
+        ssl_ca_certs=os.path.join(secrets, "ca.crt"),
+        decode_responses=True,
+    )
+
+    ctx.obj = redis_client
+
+
+@cli.command()
+@click.pass_obj
+def push(redis_client: redis.Redis) -> None:
+    """Push all key/value pairs from backup.json into Redis."""
+    secrets = os.getenv("SECRETS")
+    backup_file = os.path.join(secrets, "backup.json")
+
+    with open(backup_file, "r") as f:
+        entries = json.load(f)
+
+    # Group entries by db
+    db_map = {}
+    for entry in entries:
+        db = entry["db"]
+        db_map.setdefault(db, []).append(entry)
+
+    # Restore each db
+    for db, items in db_map.items():
+        client = redis_client.client()
+        client.execute_command("SELECT", db)
+
+        for entry in items:
+            client.set(entry["key"], entry["value"])
+            print(f"Restored db{db}:{entry['key']}")
+
+    print(f"Restored {len(entries)} entries across {len(db_map)} databases.")
+
+
+@cli.command()
+@click.pass_obj
+def pull(redis_client: redis.Redis) -> None:
+    """Pull all keys from all Redis databases and save them into backup.json."""
+    secrets = os.getenv("SECRETS")
+    backup_file = os.path.join(secrets, "backup.json")
+
+    entries = []
+
+    # Discover dbs
+    info = redis_client.info()
+    db_count = 0
+    for key in info:
+        if key.startswith("db"):
+            db_index = int(key[2:])
+            db_count = max(db_count, db_index + 1)
+
+    # Backup all dbs
+    for db in range(db_count):
+        client = redis_client.client()
+        client.execute_command("SELECT", db)
+
+        keys = client.keys("*")
+        for key in keys:
+            value = client.get(key)
+            entries.append({"db": db, "key": key, "value": value})
+
+    with open(backup_file, "w") as f:
+        json.dump(entries, f, indent=4)
+
+    print(f"Saved {len(entries)} entries across {db_count} databases to {backup_file}")
+
+
+if __name__ == "__main__":
+    secrets = os.getenv("SECRETS")
+    admin_secrets = os.path.join(secrets, "admin-secrets.env")
+
+    if not os.path.isfile(admin_secrets):
+        raise SystemExit("Admin credentials aren't defined.")
+
+    load_dotenv(admin_secrets)
+
+    cli()
