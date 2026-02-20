@@ -74,7 +74,7 @@ def pull(redis_client: redis.Redis) -> None:
     info = redis_client.info()
     db_count = 0
     for key in info:
-        if key.startswith("db"):
+        if key.startswith("db") and "_" not in key:
             db_index = int(key[2:])
             db_count = max(db_count, db_index + 1)
 
