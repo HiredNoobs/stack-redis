@@ -23,7 +23,7 @@ function check_python_env {
   fi
 
   missing=()
-  packages=(click redis python-dotenv)
+  packages=(click redis dotenv)
   for pkg in "${packages[@]}"; do
     python3 -c "import $pkg" 2>/dev/null || missing+=("$pkg")
   done
