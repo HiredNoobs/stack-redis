@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source ~/tools-bin/bin/lib/logging.sh
+source "$TOOLS_BIN/lib/logging.sh"
 
 if [ ! -f "$SECRETS/admin-secrets.env" ]; then
   log_error "Admin credentials aren't defined at '$SECRETS/admin-secrets.env'."
