@@ -16,4 +16,4 @@ fi
 make-keystore "$USER" "$HOSTS" -o "$SECRETS"
 
 # TODO: Define ACLs in $CONFIGS per user
-"$STACK_PATH/tools/client" "ACL SETUSER $USER >$REDIS_ACL_PASSWORD on +@ALL"
+"$STACK_PATH/tools/client" "ACL SETUSER $USER >$REDIS_ACL_PASSWORD on ~* &* +@ALL"
