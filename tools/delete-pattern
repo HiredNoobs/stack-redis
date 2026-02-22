@@ -2,6 +2,16 @@
 #
 # Usage: make-user <pattern>
 
+source "$TOOLS_BIN/lib/logging.sh"
+
+if [ ! -f "$SECRETS/admin-secrets.env" ]; then
+  log_error "Admin credentials aren't defined at '$SECRETS/admin-secrets.env'."
+  exit 1
+fi
+
+source "$SECRETS/admin-secrets.env"
+
+REDIS_ACL_PASSWORD=$(echo -e "$REDIS_ACL_PASSWORD" | tr -d '\r')
 PATTERN="$1"
 
 KEYS=$(docker -H unix:///var/run/docker.sock run -it --rm -v "$SECRETS:/etc/redis/secrets" \
