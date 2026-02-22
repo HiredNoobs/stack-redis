@@ -11,7 +11,7 @@ function build_secrets {
   fi
   
   if [[ ! -f "$SECRETS/redis.crt" || ! -f "$SECRETS/redis.key" ]]; then
-  make-cert redis "$REDIS_NODES $REDIS_FQDN_NODES" -o "$SECRETS" --ca-crt "$SECRETS/ca.crt" --ca-key "$SECRETS/ca.key"
+    make-cert redis "$REDIS_NODES $REDIS_FQDN_NODES" -o "$SECRETS" --ca-crt "$SECRETS/ca.crt" --ca-key "$SECRETS/ca.key"
   fi
 }
 
@@ -71,7 +71,7 @@ function stack_tools {
     check_python_env
   fi
 
-  log_info "Running $tool with args: $@"
+  log_info "Running $tool with args: $*"
   "$tool" "$@"
 }
 
@@ -95,6 +95,6 @@ function stack_deploy {
   log_info "Creating admin user..."
   stack_tools make-user admin $REDIS_NODES "atlas.$DOMAIN"
   log_info "Disabling default user..."
-  stack_tools client ACL SETUSER default off
+  stack_tools client "ACL SETUSER default off"
   stack_tools client "ACL SAVE"
 }
