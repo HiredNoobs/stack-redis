@@ -3,16 +3,17 @@
 # Usage: make-user <user> <hostname1> [hostname2 ...]
 
 USER="$1"
-HOSTS=$@
+shift
+HOSTS="$*"
 
 if [ ! -f "$SECRETS/$USER-secrets.env" ]; then
-    ACL_PASSWORD=$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c 32)
+    REDIS_ACL_PASSWORD=$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c 32)
     echo "export REDIS_ACL_PASSWORD=$ACL_PASSWORD" > "$SECRETS/$USER-secrets.env"
 else
     source "$SECRETS/$USER-secrets.env"
 fi
 
-make-keystore "$USER" $HOSTS -o "$SECRETS"
+make-keystore "$USER" "$HOSTS" -o "$SECRETS"
 
 # TODO: Define ACLs in $CONFIGS per user
-"$STACK_PATH/tools/client" "ACL SETUSER $USER >$ACL_PASSWORD on +@ALL"
+"$STACK_PATH/tools/client" "ACL SETUSER $USER >$REDIS_ACL_PASSWORD on +@ALL"
