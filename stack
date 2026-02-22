@@ -90,7 +90,7 @@ function stack_deploy {
   docker stack deploy --detach=true -c redis.yml "$STACK"
 
   log_info "Waiting for stack to stabilise..."
-  until stack_tools client ping; do
+  until stack_tools client ping >/dev/null 2>&1; do
     sleep 5
   done
 
