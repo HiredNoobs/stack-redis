@@ -4,19 +4,13 @@
 
 PATTERN="$1"
 
-docker -H unix:///var/run/docker.sock run -it --rm \
-  -v "$SECRETS:/etc/redis/secrets" "$REDIS_IMAGE" \
-  sh -c "
-    redis-cli --no-auth-warning --user admin --pass \"$REDIS_ACL_PASSWORD\" \
-      --tls -h \"$REDIS_MASTER_NODE\" -p \"$REDIS_TLS_PORT\" \
-      --cacert /etc/redis/secrets/ca.crt \
-      --cert /etc/redis/secrets/redis.crt \
-      --key /etc/redis/secrets/redis.key \
-      --scan --pattern \"$PATTERN\" \
-    | xargs -r redis-cli --no-auth-warning --user admin --pass \"$REDIS_ACL_PASSWORD\" \
-      --tls -h \"$REDIS_MASTER_NODE\" -p \"$REDIS_TLS_PORT\" \
-      --cacert /etc/redis/secrets/ca.crt \
-      --cert /etc/redis/secrets/redis.crt \
-      --key /etc/redis/secrets/redis.key DEL
-  "
+KEYS=$(docker -H unix:///var/run/docker.sock run -it --rm -v "$SECRETS:/etc/redis/secrets" \
+    "$REDIS_IMAGE" redis-cli --no-auth-warning --user admin --pass "$REDIS_ACL_PASSWORD" \
+    --tls -h "$REDIS_MASTER_NODE" -p "$REDIS_TLS_PORT" --cacert /etc/redis/secrets/ca.crt \
+    --cert /etc/redis/secrets/redis.crt --key /etc/redis/secrets/redis.key \
+    --scan --pattern $PATTERN)
 
+docker -H unix:///var/run/docker.sock run -it --rm -v "$SECRETS:/etc/redis/secrets" \
+    "$REDIS_IMAGE" redis-cli --no-auth-warning --user admin --pass "$REDIS_ACL_PASSWORD" \
+    --tls -h "$REDIS_MASTER_NODE" -p "$REDIS_TLS_PORT" --cacert /etc/redis/secrets/ca.crt \
+    --cert /etc/redis/secrets/redis.crt --key /etc/redis/secrets/redis.key DEL $KEYS
