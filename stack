@@ -89,9 +89,11 @@ function stack_deploy {
   build_secrets
   docker stack deploy --detach=true -c redis.yml "$STACK"
 
-  # TODO: Replace with something more reliable... redis-cli ping?
   log_info "Waiting for stack to stabilise..."
-  sleep 60
+  until stack_tools client ping; do
+    sleep 5
+  done
+
   log_info "Creating admin user..."
   stack_tools make-user admin $REDIS_NODES "atlas.$DOMAIN"
   log_info "Disabling default user..."
