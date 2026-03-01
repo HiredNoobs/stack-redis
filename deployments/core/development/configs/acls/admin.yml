@@ -1,0 +1,6 @@
+user: admin
+enabled: on
+hosts:
+  - atlas
+patterns: ~* &*
+acls: +@all

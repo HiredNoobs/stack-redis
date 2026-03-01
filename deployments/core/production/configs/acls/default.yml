@@ -1,0 +1,6 @@
+user: default
+enabled: off
+hosts:
+  - "*"
+patterns: ~* &*
+acls: +@all

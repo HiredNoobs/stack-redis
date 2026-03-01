@@ -21,7 +21,7 @@ function check_python_env {
   in_venv=$(python3 -c 'import sys; print(int(hasattr(sys,"real_prefix") or sys.prefix!=getattr(sys,"base_prefix",sys.prefix)))')
 
   if [[ "$in_venv" -ne 1 ]]; then
-    log_error "Python virtualenv not enabled."
+    log_error "Python virtualenv not enabled (or broken)."
     exit 1
   fi
 
@@ -77,11 +77,11 @@ function stack_tools {
 
 function stack_env {
   echo
-  echo "DOCKER IMAGE  = $REDIS_IMAGE"
-  echo "REDIS NODES   = ($REDIS_REPLICAS)"
+  echo "DOCKER IMAGE = $REDIS_IMAGE"
+  echo "REDIS NODES  = ($REDIS_REPLICAS)"
   list "$REDIS_NODES"
   echo
-  echo "TLS PORT      = $REDIS_TLS_PORT"
+  echo "TLS PORT     = $REDIS_TLS_PORT"
   echo
 }
 
@@ -89,14 +89,10 @@ function stack_deploy {
   build_secrets
   docker stack deploy --detach=true -c redis.yml "$STACK"
 
-  log_info "Waiting for stack to stabilise..."
+  log_info "Waiting for Redis to stabilise..."
   until stack_tools client ping >/dev/null 2>&1; do
     sleep 5
   done
 
-  log_info "Creating admin user..."
-  stack_tools make-user admin $REDIS_NODES "atlas.$DOMAIN"
-  log_info "Disabling default user..."
-  stack_tools client "ACL SETUSER default off"
-  stack_tools client "ACL SAVE"
+  "$TOOLS/create-from-config"
 }

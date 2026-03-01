@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
 #
+# Creates the certs, keystore, and Redis secrets for a user.
+# DOES NOT CREATE THE ACLS!
+#
 # Usage: make-user <user> <hostname1> [hostname2 ...]
 
 USER="$1"
 shift
 HOSTS="$*"
 
-if [ ! -f "$SECRETS/$USER-secrets.env" ]; then
-    REDIS_ACL_PASSWORD=$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c 32)
-    echo "export REDIS_ACL_PASSWORD=$ACL_PASSWORD" > "$SECRETS/$USER-secrets.env"
-else
-    source "$SECRETS/$USER-secrets.env"
-fi
-
 make-keystore "$USER" "$HOSTS" -o "$SECRETS"
 
-# TODO: Define ACLs in $CONFIGS per user
-"$STACK_PATH/tools/client" "ACL SETUSER $USER >$REDIS_ACL_PASSWORD on ~* &* +@ALL"
+if [ ! -f "$SECRETS/$USER-secrets.env" ]; then
+    REDIS_ACL_PASSWORD=$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c 32)
+    echo "export REDIS_ACL_PASSWORD=$REDIS_ACL_PASSWORD" > "$SECRETS/$USER-secrets.env"
+fi

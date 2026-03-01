@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+#
+# Reads config from $CONFIGS/acls and creates the
+# specified users and ACLs.
+
+# -----------------------------------------------------
+# Functions
+# -----------------------------------------------------
+
+function create_acls {
+  local file user enabled hosts patterns acls fqdn_hosts
+
+  for file in "$CONFIGS/acls/"*.yml "$CONFIGS/acls/"*.yaml; do
+    [ -e "$file" ] || continue
+
+    user=$(yq -r '.user' "$file")
+    enabled=$(yq -r '.enabled' "$file")
+    hosts=$(yq -r '.hosts[]' "$file")
+    patterns=$(yq -r '.patterns' "$file")
+    acls=$(yq -r '.acls' "$file")
+
+    fqdn_hosts=""
+    for host in $hosts; do
+      fqdn_hosts+="$host $host.$DOMAIN "
+    done
+
+    if [ ! -f "$SECRETS/$user-keystore.jks" ]; then
+      log_info "Creating new certs and keystore..."
+      "$TOOLS/make-user" "$user" "$fqdn_hosts"
+    fi
+
+    source "$SECRETS/$user-secrets.env"
+
+    "$STACK_PATH/tools/client" "ACL SETUSER $user >$REDIS_ACL_PASSWORD $enabled $patterns $acls"
+  done
+}
+
+# -----------------------------------------------------
+# Main
+# -----------------------------------------------------
+
+log_info "Creating users and ACLs"
+create_acls
