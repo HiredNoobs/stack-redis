@@ -94,5 +94,5 @@ function stack_deploy {
     sleep 5
   done
 
-  "$TOOLS/create-from-config"
+  "$STACK_PATH/tools/create-from-config"
 }
