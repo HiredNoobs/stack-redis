@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 #
-# Usage: make-user <pattern>
+# Tactical script for clearing out keys with a specific pattern.
+# Don't use for large amounts of keys...
+#
+# Usage: delete-pattern <pattern>
 
 source "$TOOLS_BIN/lib/logging.sh"
 
@@ -20,7 +23,11 @@ KEYS=$(docker -H unix:///var/run/docker.sock run -it --rm -v "$SECRETS:/etc/redi
     --cert /etc/redis/secrets/redis.crt --key /etc/redis/secrets/redis.key \
     --scan --pattern $PATTERN)
 
-docker -H unix:///var/run/docker.sock run -it --rm -v "$SECRETS:/etc/redis/secrets" \
-    "$REDIS_IMAGE" redis-cli --no-auth-warning --user admin --pass "$REDIS_ACL_PASSWORD" \
-    --tls -h "$REDIS_MASTER_NODE" -p "$REDIS_TLS_PORT" --cacert /etc/redis/secrets/ca.crt \
-    --cert /etc/redis/secrets/redis.crt --key /etc/redis/secrets/redis.key DEL $KEYS
+# This is extremely inefficent but I can't get xargs to work properly
+# and this is more of a tactical fix script...
+for KEY in $KEYS; do
+  docker -H unix:///var/run/docker.sock run -it --rm -v "$SECRETS:/etc/redis/secrets" \
+      "$REDIS_IMAGE" redis-cli --no-auth-warning --user admin --pass "$REDIS_ACL_PASSWORD" \
+      --tls -h "$REDIS_MASTER_NODE" -p "$REDIS_TLS_PORT" --cacert /etc/redis/secrets/ca.crt \
+      --cert /etc/redis/secrets/redis.crt --key /etc/redis/secrets/redis.key DEL $KEY
+done
