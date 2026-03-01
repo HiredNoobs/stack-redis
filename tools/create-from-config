@@ -3,6 +3,8 @@
 # Reads config from $CONFIGS/acls and creates the
 # specified users and ACLs.
 
+source "$TOOLS_BIN/lib/logging.sh"
+
 # -----------------------------------------------------
 # Functions
 # -----------------------------------------------------
@@ -24,14 +26,21 @@ function create_acls {
       fqdn_hosts+="$host $host.$DOMAIN "
     done
 
-    if [ ! -f "$SECRETS/$user-keystore.jks" ]; then
-      log_info "Creating new certs and keystore..."
-      "$TOOLS/make-user" "$user" "$fqdn_hosts"
+    log_info "Creating $user."
+    # The default user doesn't need certs or a password
+    if [ "$user" == "default" ]; then
+      log_info "Skipping secret creation for default user ($user)."
+      "$STACK_PATH/tools/client" "ACL SETUSER $user $enabled $patterns $acls"
+    else
+      if [ ! -f "$SECRETS/$user-keystore.jks" ]; then
+        log_info "Creating new certs and keystore..."
+        "$TOOLS/make-user" "$user" "$fqdn_hosts"
+      fi
+
+      source "$SECRETS/$user-secrets.env"
+
+      "$STACK_PATH/tools/client" "ACL SETUSER $user >$REDIS_ACL_PASSWORD $enabled $patterns $acls"
     fi
-
-    source "$SECRETS/$user-secrets.env"
-
-    "$STACK_PATH/tools/client" "ACL SETUSER $user >$REDIS_ACL_PASSWORD $enabled $patterns $acls"
   done
 }
 
@@ -41,3 +50,5 @@ function create_acls {
 
 log_info "Creating users and ACLs"
 create_acls
+
+"$STACK_PATH/tools/client" "ACL SAVE"
