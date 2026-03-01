@@ -5,6 +5,8 @@
 
 source "$TOOLS_BIN/lib/logging.sh"
 
+TOOLS="${STACK_PATH}/tools"
+
 # -----------------------------------------------------
 # Functions
 # -----------------------------------------------------
@@ -30,7 +32,7 @@ function create_acls {
     # The default user doesn't need certs or a password
     if [ "$user" == "default" ]; then
       log_info "Skipping secret creation for default user ($user)."
-      "$STACK_PATH/tools/client" "ACL SETUSER $user $enabled $patterns $acls"
+      "$TOOLS/client" "ACL SETUSER $user $enabled $patterns $acls"
     else
       if [ ! -f "$SECRETS/$user-keystore.jks" ]; then
         log_info "Creating new certs and keystore..."
@@ -39,7 +41,7 @@ function create_acls {
 
       source "$SECRETS/$user-secrets.env"
 
-      "$STACK_PATH/tools/client" "ACL SETUSER $user >$REDIS_ACL_PASSWORD $enabled $patterns $acls"
+      "$TOOLS/client" "ACL SETUSER $user >$REDIS_ACL_PASSWORD $enabled $patterns $acls"
     fi
   done
 }
@@ -51,4 +53,4 @@ function create_acls {
 log_info "Creating users and ACLs"
 create_acls
 
-"$STACK_PATH/tools/client" "ACL SAVE"
+"$TOOLS/client" "ACL SAVE"
