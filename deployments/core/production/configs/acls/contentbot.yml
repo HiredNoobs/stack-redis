@@ -2,5 +2,5 @@ user: contentbot
 enabled: on
 hosts:
   - prod-contentbot001
-patterns: ~*@youtube
+patterns: ~*@youtube*
 acls: +@READ +@WRITE
